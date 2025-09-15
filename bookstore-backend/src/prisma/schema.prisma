@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  user
+  author
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum PaymentStatus {
+  processing
+  paid
+  failed
+}
+
+enum PaymentMethod {
+  qr_code
+  credit_card
+  cod
+}
+
+enum OrderStatus {
+  pending
+  processing
+  canceled
+  completed
+}
+
+model Authentication {
+  authID String @id @db.VarChar(36)
+  email  String @unique @db.VarChar(255)
+  pass   String @db.VarChar(255)
+  role   Role
+
+  admin  Admin?
+  user   User?
+  author Author?
+}
+
+model Admin {
+  adminID String @id @db.VarChar(36)
+  authID  String @unique @db.VarChar(36)
+
+  authentication Authentication @relation(fields: [authID], references: [authID], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model User {
+  userID       String    @id @db.VarChar(36)
+  name         String    @db.VarChar(255)
+  phone        String?   @db.VarChar(20)
+  gender       Gender?
+  birthDate    DateTime? @db.Date
+  registerDate DateTime  @default(now()) @db.DateTime(0)
+  authID       String    @unique @db.VarChar(36)
+
+  authentication Authentication @relation(fields: [authID], references: [authID], onDelete: Cascade, onUpdate: Cascade)
+  addresses     Address[]
+  orders        Order[]
+  reviews       Review[]
+  wishlists     Wishlist[]
+  cart          Cart?
+}
+
+model Address {
+  addressID       String @id @db.VarChar(36)
+  city            String @db.VarChar(255)
+  ward            String @db.VarChar(255)
+  specificAddress String? @db.VarChar(255)
+  userID          String @db.VarChar(36)
+
+  user User @relation(fields: [userID], references: [userID], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Author {
+  authorID String @id @db.VarChar(36)
+  name     String @db.VarChar(255)
+  authID   String @unique @db.VarChar(36)
+
+  authentication Authentication @relation(fields: [authID], references: [authID], onDelete: Cascade, onUpdate: Cascade)
+  books          AuthorBook[]
+}
+
+model Payment {
+  paymentID String        @id @db.VarChar(36)
+  orderID   String        @unique @db.VarChar(36)
+  status    PaymentStatus
+  method    PaymentMethod
+  amount    Decimal       @db.Decimal(10, 2)
+  paidAt    DateTime?     @db.DateTime(0)
+
+  order Order @relation("OrderPayment", fields: [orderID], references: [orderID], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Order {
+  orderID        String      @id @db.VarChar(36)
+  status         OrderStatus
+  totalAmount    Decimal     @db.Decimal(10, 2)
+  createdAt      DateTime    @default(now()) @db.DateTime(0)
+  addressSnapshot String     @db.VarChar(255)
+  phoneSnapshot   String     @db.VarChar(20)
+  userID         String      @db.VarChar(36)
+  
+
+  user    User    @relation(fields: [userID], references: [userID], onDelete: Cascade, onUpdate: Cascade)
+  payment Payment?  @relation("OrderPayment")
+  books   OrderBook[]
+}
+
+model Book {
+  bookID       String      @id @db.VarChar(36)
+  title        String      @db.VarChar(255)
+  price        Decimal     @db.Decimal(10, 2)
+  description  String?     @db.Text
+  stockQuantity Int
+  soldNumber    Int        @default(0)
+  pubTime       DateTime?  @db.Date
+  genreID       String?    @db.VarChar(36)
+
+  genre      Genre?      @relation(fields: [genreID], references: [genreID], onDelete: SetNull, onUpdate: Cascade)
+  images     BookImage[]
+  wishlists  Wishlist[]
+  reviews    Review[]
+  authors    AuthorBook[]
+  carts      CartBook[]
+  orders     OrderBook[]
+}
+
+model BookImage {
+  bookImageID String @id @db.VarChar(36)
+  url         String @db.VarChar(500)
+  bookID      String @db.VarChar(36)
+
+  book Book @relation(fields: [bookID], references: [bookID], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Wishlist {
+  wishListID String @id @db.VarChar(36)
+  userID     String @db.VarChar(36)
+  bookID     String @db.VarChar(36)
+
+  user User @relation(fields: [userID], references: [userID], onDelete: Cascade, onUpdate: Cascade)
+  book Book @relation(fields: [bookID], references: [bookID], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Review {
+  reviewID  String   @id @db.VarChar(36)
+  rating    Int
+  cmt       String?  @db.Text
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime? @updatedAt @db.DateTime(0)
+  userID    String   @db.VarChar(36)
+  bookID    String   @db.VarChar(36)
+
+  user User @relation(fields: [userID], references: [userID], onDelete: Cascade, onUpdate: Cascade)
+  book Book @relation(fields: [bookID], references: [bookID], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model AuthorBook {
+  bookID   String @db.VarChar(36)
+  authorID String @db.VarChar(36)
+
+  book   Book   @relation(fields: [bookID], references: [bookID], onDelete: Cascade, onUpdate: Cascade)
+  author Author @relation(fields: [authorID], references: [authorID], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([bookID, authorID])
+}
+
+model Genre {
+  genreID String @id @db.VarChar(36)
+  name    String @db.VarChar(255)
+
+  books Book[]
+}
+
+model Cart {
+  cartID String @id @db.VarChar(36)
+  userID String @unique @db.VarChar(36)
+
+  user  User      @relation(fields: [userID], references: [userID], onDelete: Cascade, onUpdate: Cascade)
+  books CartBook[]
+}
+
+model CartBook {
+  cartID    String   @db.VarChar(36)
+  bookID    String   @db.VarChar(36)
+  quantity  Int
+  addedAt   DateTime @default(now()) @db.DateTime(0)
+  isSelected Boolean @default(true)
+
+  cart Cart @relation(fields: [cartID], references: [cartID], onDelete: Cascade, onUpdate: Cascade)
+  book Book @relation(fields: [bookID], references: [bookID], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([cartID, bookID])
+}
+
+model OrderBook {
+  orderID    String  @db.VarChar(36)
+  bookID     String  @db.VarChar(36)
+  priceAtTime Decimal @db.Decimal(10, 2)
+  quantity   Int
+  subTotal   Decimal @db.Decimal(10, 2)
+
+  order Order @relation(fields: [orderID], references: [orderID], onDelete: Cascade, onUpdate: Cascade)
+  book  Book  @relation(fields: [bookID], references: [bookID], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([orderID, bookID])
+}
