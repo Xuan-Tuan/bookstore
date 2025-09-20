@@ -210,7 +210,37 @@ export const userService = {
       throw new Error("Failed to retrieve users with pagination");
     }
   },
+  // Thêm hàm getProfile cho user
+  async getUserProfile(userID: string): Promise<any> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { userID },
+        include: {
+          authentication: true,
+          addresses: true,
+        },
+      });
 
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      return {
+        id: user.userID,
+        email: user.authentication.email,
+        role: user.authentication.role,
+        name: user.name,
+        phone: user.phone,
+        gender: user.gender,
+        birthDate: user.birthDate,
+        addresses: user.addresses,
+        registerDate: user.registerDate,
+      };
+    } catch (error) {
+      console.error("Error getting user profile:", error);
+      throw new Error("Failed to get user profile");
+    }
+  },
   // CREATE USER
   async createUser(userData: UserCreateInput): Promise<UserWithRelations> {
     try {
@@ -347,93 +377,6 @@ export const userService = {
       throw new Error("Failed to update user");
     }
   },
-
-  //debug
-  //   async updateUser(
-  //     id: string,
-  //     userData: UserUpdateInput
-  //   ): Promise<UserWithRelations> {
-  //     try {
-  //       console.log(`=== UPDATE USER START ===`);
-  //       console.log(`User ID: ${id}`);
-  //       console.log(`Update data:`, JSON.stringify(userData, null, 2));
-
-  //       const { name, phone, gender, birthDate } = userData;
-
-  //       // Kiểm tra user tồn tại
-  //       const existingUser = await prisma.user.findUnique({
-  //         where: { userID: id },
-  //         include: { authentication: true },
-  //       });
-
-  //       if (!existingUser) {
-  //         console.log(`❌ User with ID ${id} not found`);
-  //         throw new Error("User not found");
-  //       }
-
-  //       console.log(`✅ User found:`, existingUser.name);
-
-  //       return await prisma.$transaction(async (tx) => {
-  //         // Chuẩn bị data update
-  //         const updateData: any = {};
-  //         if (name !== undefined) updateData.name = name;
-  //         if (phone !== undefined) updateData.phone = phone;
-  //         if (gender !== undefined) updateData.gender = gender;
-  //         if (birthDate !== undefined) updateData.birthDate = birthDate;
-
-  //         console.log(`📦 Prepared update data:`, updateData);
-
-  //         // Thực hiện update
-  //         const user = await tx.user.update({
-  //           where: { userID: id },
-  //           data: updateData,
-  //         });
-
-  //         console.log(`✅ User updated successfully:`, user);
-
-  //         // Lấy lại thông tin đầy đủ
-  //         const completeUser = await tx.user.findUnique({
-  //           where: { userID: id },
-  //           include: {
-  //             authentication: true,
-  //             addresses: true,
-  //           },
-  //         });
-
-  //         if (!completeUser) {
-  //           throw new Error("Failed to retrieve updated user");
-  //         }
-
-  //         console.log(`✅ Complete user data retrieved`);
-  //         console.log(`=== UPDATE USER END ===`);
-  //         return completeUser as UserWithRelations;
-  //       });
-  //     } catch (error) {
-  //       console.error(`❌ Error updating user ${id}:`, error);
-
-  //       // Log chi tiết toàn bộ error
-  //       console.error("🔍 Full error object:", error);
-
-  //       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-  //         console.error(`📛 Prisma error code: ${error.code}`);
-  //         console.error(`📛 Prisma error message: ${error.message}`);
-  //         console.error(`📛 Prisma error meta:`, error.meta);
-
-  //         if (error.code === "P2002") {
-  //           throw new Error("User update conflict");
-  //         }
-  //         if (error.code === "P2025") {
-  //           throw new Error("User not found");
-  //         }
-  //       }
-
-  //       if (error instanceof Error) {
-  //         throw error;
-  //       }
-
-  //       throw new Error("Failed to update user");
-  //     }
-  //   },
 
   // DELETE USER
   async deleteUser(id: string): Promise<{ message: string }> {
