@@ -3,6 +3,27 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log("🧹 Cleaning existing data...");
+
+  // XÓA THEO THỨ TỰ ĐẢO NGƯỢC QUAN HỆ (QUAN TRỌNG!)
+  await prisma.orderBook.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartBook.deleteMany();
+  await prisma.cart.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.wishlist.deleteMany();
+  await prisma.authorBook.deleteMany();
+  await prisma.bookImage.deleteMany();
+  await prisma.book.deleteMany();
+  await prisma.genre.deleteMany();
+  await prisma.author.deleteMany();
+  await prisma.address.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.admin.deleteMany();
+  await prisma.authentication.deleteMany();
+
+  console.log("✅ Database cleaned successfully!");
   // 1. Authentication
   await prisma.authentication.createMany({
     data: [
