@@ -7,7 +7,7 @@ import { errorMiddleware } from "./middleware/error.middleware";
 import { HTTP_STATUS } from "./config/constants";
 
 // Import routes:
-// import authRoutes from "./routes/auth.routes";
+import authRoutes from "./routes/auth.routes";
 
 const app: Application = express();
 
@@ -45,7 +45,7 @@ app.get("/health", (req, res) => {
 });
 
 // API routes
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 // app.use("/api/users", userRoutes);
 // app.use("/api/books", bookRoutes);
 // app.use("/api/orders", orderRoutes);
