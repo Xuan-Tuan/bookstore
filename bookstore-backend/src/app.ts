@@ -8,6 +8,7 @@ import { HTTP_STATUS } from "./config/constants";
 
 // Import routes:
 import authRoutes from "./routes/auth.routes";
+import userRoutes from "./routes/user.routes";
 
 const app: Application = express();
 
@@ -46,7 +47,7 @@ app.get("/health", (req, res) => {
 
 // API routes
 app.use("/api/auth", authRoutes);
-// app.use("/api/users", userRoutes);
+app.use("/api/users", userRoutes);
 // app.use("/api/books", bookRoutes);
 // app.use("/api/orders", orderRoutes);
 
